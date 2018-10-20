@@ -12,6 +12,7 @@ class CustomWeChatView(WeChatView):
 
     handlers = [
         HelpOrSubscribeHandler, UnbindOrUnsubscribeHandler, BindAccountHandler, BookEmptyHandler,
+        BookWhatHandler,FindOutTicketHandler
     ]
     error_message_handler = ErrorHandler
     default_handler = DefaultHandler
@@ -107,4 +108,4 @@ class CustomWeChatView(WeChatView):
             return cls.update_menu(Activity.objects.filter(
                 id__in=activity_ids, status=Activity.STATUS_PUBLISHED, book_end__gt=timezone.now()
             ).order_by('book_end')[: 5])
-        cls.lib.set_wechat_menu(cls.menu)
+cls.lib.set_wechat_menu(cls.menu)
