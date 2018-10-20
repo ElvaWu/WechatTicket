@@ -39,7 +39,7 @@ class LoginTest(TestCase):
 
 class LogoutTest(TestCase):
     def setUp(self):
-        User.objects.create_superuser(sueruser['username'], sueruser['email'], sueruser['password'])
+        User.objects.create_superuser(superuser['username'], superuser['email'], superuser['password'])
 
     def testWrongLogout(self):
         c= Client()
