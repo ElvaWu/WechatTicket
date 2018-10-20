@@ -244,4 +244,4 @@ class WeChatView(BaseView):
         if root_elem.tag == 'xml':
             for child in root_elem:
                 msg[child.tag] = child.text
-return msg
+        return msg
