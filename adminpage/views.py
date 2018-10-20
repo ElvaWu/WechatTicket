@@ -225,4 +225,4 @@ class AdminActivityCheckin(APIView):
             ticket.save()
             act.used_tickets += 1
             act.save()
-return {'ticket': ticket.unique_id, 'studentId': ticket.student_id}
+            return {'ticket': ticket.unique_id, 'studentId': ticket.student_id}
