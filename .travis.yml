@@ -15,4 +15,5 @@ install:
     - pip install pymysql
     
 script:
+    - pwd
     - python manage.py test
