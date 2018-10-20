@@ -9,8 +9,6 @@ env:
     - TRAVIS=true
 before_install:
     - mysql -e 'CREATE DATABASE IF NOT EXISTS wechat_ticket;'
-    - python manage.py makemigrations
-    - python manage.py migrate
 # command to install dependencies
 install:
     - pip install -r requirements.txt
