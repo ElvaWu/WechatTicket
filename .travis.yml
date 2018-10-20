@@ -15,4 +15,5 @@ install:
     - pip install pymysql
     
 script:
+    - python manage.py makemigrations
     - python manage.py test
