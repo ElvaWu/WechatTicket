@@ -72,4 +72,3 @@ class TicketDetail(APIView):
         TicketDict['status'] = ticket.status
         return TicketDict
 
-
