@@ -188,4 +188,4 @@ class FindOutTicketHandler(WeChatHandler):
                     'PicUrl': activity.pic_url,
                     'Url': settings.get_url("/u/ticket", {'openid':self.user.open_id,'ticket':item.unique_id})
                 })
-return self.reply_news(details)
+        return self.reply_news(details)
