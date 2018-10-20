@@ -74,4 +74,4 @@ class TicketDetail(APIView):
         TicketDict['endTime'] = timeStamp(ticket.activity.end_time) + 8*60*60
         TicketDict['currentTime'] = int(time.mktime(timezone.now().timetuple())) + 8*60*60
         TicketDict['status'] = ticket.status
-return TicketDict
+        return TicketDict
