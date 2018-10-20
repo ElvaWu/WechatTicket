@@ -8,8 +8,7 @@
             <Title><![CDATA[{{ Article.Title }}]]></Title>
             <Description><![CDATA[{{ Article.Description }}]]></Description>
             <PicUrl><![CDATA[{{ Article.PicUrl }}]]></PicUrl>
-            <Url><![CDATA[{{ Article.Url }}]]></Url>
-        </item>
+            <Url><![CDATA[{{ Article.Url|safe }}]]></Url>
         {% endfor %}
     </Articles>
 {% endblock %}
