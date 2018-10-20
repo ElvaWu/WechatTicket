@@ -8,13 +8,14 @@ from django.contrib import auth
 from django.contrib.auth import authenticate
 from django.core import serializers
 
-from wechat.models import Activity
+from wechat.models import Activity, Ticket
 from wechat.views import CustomWeChatView
 from codex.baseerror import BaseError
 
-import json, datetime, time, os
+import json, datetime, time, os, uuid
 
 class AdminLogin(APIView):
+
     def get(self):
         if self.request.user.is_authenticated():
             return None
@@ -22,8 +23,9 @@ class AdminLogin(APIView):
             raise ValidateError('')
 
     def post(self):
-        usn = self.body['username']
-        pwd = self.body['password']
+        self.check_input('username', 'password')
+        usn = self.input['username']
+        pwd = self.input['password']
         user = authenticate(username=usn, password=pwd)
         if user is not None and user.is_active:
             auth.login(self.request, user)
@@ -31,11 +33,13 @@ class AdminLogin(APIView):
         raise ValidateError('')
 
 class AdminLogout(APIView):
+
     def post(self):
         auth.logout(self.request)
         return None
 
 class AdminActivityList(APIView):
+
     def stringToTimeStamp(self, date_str):
         d = datetime.datetime.strptime(date_str, "%Y-%m-%d %H:%M:%S")
         t = d.timetuple()
@@ -71,8 +75,10 @@ class AdminActivityList(APIView):
         return activity
 
 class AdminActivityDelete(APIView):
+
     def post(self):
-        del_id = self.body["id"]
+        self.check_input('id')
+        del_id = self.input["id"]
         del_act = Activity.objects.get(id=del_id)
         if del_act is not None:
             del_act.delete()
@@ -81,17 +87,19 @@ class AdminActivityDelete(APIView):
             raise InputError('')
 
 class AdminActivityCreate(APIView):
+
     def add8Hours(self, timestr):
         date_time = time.strptime(timestr,"%Y-%m-%dT%H:%M:%S.%fZ")
         time_stamp = int(time.mktime(date_time))
         time_stamp += 8 * 60 * 60
         time_tuple = time.localtime(time_stamp)
         date_time = time.strftime('%Y-%m-%dT%H:%M:%SZ', time_tuple)
-        print(date_time)
         return date_time
 
     def post(self):
-        act_info = self.body
+        self.check_input('name', 'key', 'place' , 'description', 'startTime', 'endTime', 'bookStart'
+                         , 'bookEnd', 'totalTickets', 'status', 'picUrl')
+        act_info = self.input
         new_act = Activity(name=act_info["name"], key=act_info["key"], place=act_info["place"],
                            description=act_info["description"], start_time=self.add8Hours(act_info["startTime"]),
                            end_time=self.add8Hours(act_info["endTime"]), book_start=self.add8Hours(act_info["bookStart"]),
@@ -103,9 +111,11 @@ class AdminActivityCreate(APIView):
         return id
 
 class AdminImageUpload(APIView):
+
     def post(self):
+        self.check_input('image')
         img = self.input['image'][0]
-        img_name = './media/img/%s' % (img.name)
+        img_name = './media/img/%s' % (str(uuid.uuid1()) + '-' + img.name)
         with open(img_name, 'wb') as f:
             for fimg in img.chunks():
                 f.write(fimg)
@@ -113,13 +123,13 @@ class AdminImageUpload(APIView):
         return img_url
 
 class AdminActivityDetail(APIView):
+
     def add8Hours(self, timestr):
         date_time = time.strptime(timestr,"%Y-%m-%dT%H:%M:%S.%fZ")
         time_stamp = int(time.mktime(date_time))
         time_stamp += 8 * 60 * 60
         time_tuple = time.localtime(time_stamp)
         date_time = time.strftime('%Y-%m-%dT%H:%M:%SZ', time_tuple)
-        print(date_time)
         return date_time
 
     def stringToTimeStamp(self, date_str):
@@ -153,29 +163,44 @@ class AdminActivityDetail(APIView):
         return tmp_dict
 
     def get(self):
-        act_id = self.query['id']
+        self.check_input('id')
+        act_id = self.input['id']
         detail_queryset = Activity.objects.filter(id=act_id)
         detail_json = json.loads(serializers.serialize("json", detail_queryset))
         detail = self.formatActivityDetail(detail_json)
         return detail
 
     def post(self):
-        new_act_info = self.body
+        self.check_input('id', 'name', 'place', 'description', 'picUrl', 'startTime', 'endTime', 'bookStart',
+                         'bookEnd', 'totalTickets', 'status')
+        new_act_info = self.input
         act_id = new_act_info['id']
-        act = Activity.objects.get(id=act_id)
-        if act:
+        current = int(time.time())
+        try:
+            act = Activity.objects.get(id=act_id)
+        except:
+            raise LogicError('no activity')
+        else:
+            if act.status == 0:
+                act.name = new_act_info['name']
+                act.place = new_act_info['place']
             act.description = new_act_info['description']
             act.pic_url = new_act_info['picUrl']
-            act.start_time = self.add8Hours(new_act_info['startTime'])
-            act.end_time = self.add8Hours(new_act_info['endTime'])
-            act.book_start = self.add8Hours(new_act_info['bookStart'])
-            act.book_end = self.add8Hours(new_act_info['bookEnd'])
-            act.total_tickets = new_act_info['totalTickets']
-            act.status = new_act_info['status']
+            if current < self.stringToTimeStamp(act.end_time):
+                act.start_time = self.add8Hours(new_act_info['startTime'])
+                act.end_time = self.add8Hours(new_act_info['endTime'])
+            if act.status == 0:
+                act.book_start = self.add8Hours(new_act_info['bookStart'])
+                act.status = new_act_info['status']
+            if current < self.stringToTimeStamp(act.start_time):
+                act.book_end = self.add8Hours(new_act_info['bookEnd'])
+            if current < self.stringToTimeStamp(act.book_start):
+                act.total_tickets = new_act_info['totalTickets']
             act.save()
         return None
 
 class AdminActivityMenu(APIView):
+
     def get(self):
         res = []
         act = Activity.objects.all()
@@ -192,14 +217,47 @@ class AdminActivityMenu(APIView):
         return res
 
     def post(self):
-        list = self.body
+        if isinstance(self.input, list) == False:
+            raise InputError('')
+        input_list = self.input
         act_list = []
-        for update_id in list:
+        for update_id in input_list:
             act = Activity.objects.get(id=update_id)
             act_list.append(act)
         CustomWeChatView.update_menu(act_list)
         return None
 
 class AdminActivityCheckin(APIView):
+
+    def datetimeToStamp(self, date_time):
+        return int(time.mktime(date_time.timetuple()))
+
     def post(self):
-return None
+        self.check_input('actId')
+        # 活动是否存在
+        try:
+            act = Activity.objects.get(id=int(self.input['actId']))
+        except:
+            raise LogicError('activity not found')
+        else:
+            act_start = self.datetimeToStamp(act.start_time)
+            act_end = self.datetimeToStamp(act.end_time)
+            current = int(time.time())
+            if current < act_start or current > act_end:
+                raise LogicError('not activity time')
+        # 输入是否合法
+        try:
+            if 'ticket' in self.input:
+                ticket = Ticket.objects.get(unique_id=self.input['ticket'])
+            elif 'studentId' in self.input:
+                ticket = Ticket.objects.get(student_id=self.input['studentId'])
+            else:
+                raise InputError('input error')
+        except:
+            raise LogicError('ticket not found')
+        else:
+            if ticket.status != Ticket.STATUS_VALID:
+                raise LogicError('invalid ticket')
+            ticket.status = Ticket.STATUS_USED
+            ticket.save()
+return {'ticket': ticket.unique_id, 'studentId': ticket.student_id}
