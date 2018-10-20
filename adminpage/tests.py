@@ -108,4 +108,4 @@ class ActivityTest(TestCase):
         self.assertNotEqual(code,0)
         res = c.post('/api/a/activity/delete',{'name':'212'})
         code = res.json()['code']
-self.assertNotEqual(code,0)
+        self.assertNotEqual(code,0)
